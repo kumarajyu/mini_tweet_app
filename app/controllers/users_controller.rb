@@ -1,4 +1,8 @@
 class UsersController < ApplicationController
+  before_action :authenticate_user, only: [:index, :show, :edit, :update]
+  before_action :limitation_login_user, only: [:new, :create, :login_page, :login]
+  before_action :limitation_correct_user, only: [:edit, :update]
+  
   def new
     @user = User.new
   end
@@ -16,8 +20,10 @@ class UsersController < ApplicationController
       name: params[:name],
       email: params[:email],
       image: "default.png",
+      password: params[:password],
       )
     if @user.save
+      session[:user_id] = @user.id
       flash[:notice] = "ユーザーを新規登録しました!"
       redirect_to user_url @user
     else
@@ -43,5 +49,28 @@ class UsersController < ApplicationController
     else
       render :edit
     end
+  end
+  
+  def login_page
+  end
+  
+  def login
+    @user = User.find_by(email: params[:email], password: params[:password])
+    if @user
+      session[:user_id] = @user.id
+      flash[:notice] = "ログインしました。"
+      redirect_to posts_index_url
+    else
+      @error_message = "メールアドレスまたはパスワードが間違っています。"
+      @email = params[:email]
+      @password = params[:password]
+      render :login_page
+    end
+  end
+  
+  def logout
+    session[:user_id] = nil
+    flash[:notice] = "ログアウトしました。"
+    redirect_to login_url
   end
 end
